@@ -3,16 +3,22 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"product-service/internal/repository"
+	"product-service/internal/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ProductHandler struct {
+	productService *services.ProductService
 }
 
 func NewProductHandler() *ProductHandler {
-	return &ProductHandler{}
+	repo := repository.NewProductRepoMysql()
+	return &ProductHandler{
+		productService: services.NewProductService(repo),
+	}
 }
 
 func (handler *ProductHandler) GetProducts(c *gin.Context) {
@@ -37,7 +43,8 @@ func (handler *ProductHandler) GetProductByID(c *gin.Context) {
 func (handler *ProductHandler) CreateProduct(c *gin.Context) {
 	//A struct will hold the new product
 	//bind the info in request to the struct, save to the database and return response
-
+	ci := 9
+	handler.productService.CreateProduct()
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": "product created successfully",
 	})
