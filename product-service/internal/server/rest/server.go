@@ -3,9 +3,13 @@ package rest
 import (
 	"log"
 	"product-service/internal/config"
+	"product-service/internal/repository"
 	"product-service/internal/server/rest/handlers"
+	"product-service/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type Server struct {
@@ -20,11 +24,20 @@ func NewServer(config config.Config) *Server {
 
 func (s *Server) Start() {
 
+	conn := sqlx.MustConnect(
+		"postgres",
+		"postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+	) // Dependency injection
+	productPostGresRepos := repository.NewProductRepositoryPostgres(conn)
+	productSvc := services.NewProductService(productPostGresRepos)
+	productHandler := handlers.NewProductHandler(productSvc)
+
 	// Create a Gin router with default middleware (logger and recovery)
+
 	r := gin.Default()
 
 	productRoutes := r.Group("/products")
-	productHandler := handlers.NewProductHandler()
+	// Create a db connection
 
 	// Define a simple GET endpoint
 	productRoutes.GET("/get-product", productHandler.GetProducts)

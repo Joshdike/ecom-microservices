@@ -3,7 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"product-service/internal/repository"
+	"product-service/internal/dto"
 	"product-service/internal/services"
 	"strconv"
 
@@ -14,10 +14,9 @@ type ProductHandler struct {
 	productService *services.ProductService
 }
 
-func NewProductHandler() *ProductHandler {
-	repo := repository.NewProductRepoMysql()
+func NewProductHandler(productService *services.ProductService) *ProductHandler {
 	return &ProductHandler{
-		productService: services.NewProductService(repo),
+		productService: productService,
 	}
 }
 
@@ -40,13 +39,34 @@ func (handler *ProductHandler) GetProductByID(c *gin.Context) {
 	})
 }
 
+// dto  --->thats basically yor request response
+// model  --->which you will save inside db
+
 func (handler *ProductHandler) CreateProduct(c *gin.Context) {
+
+	var productRequest dto.ProductRequest
+
+	err := c.BindJSON(&productRequest)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+
+	}
+
 	//A struct will hold the new product
 	//bind the info in request to the struct, save to the database and return response
-	ci := 9
-	handler.productService.CreateProduct()
+	id, err := handler.productService.CreateProduct(productRequest)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": "product created successfully",
+		"id":      id,
 	})
 }
 
